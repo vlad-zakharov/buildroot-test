@@ -66,6 +66,7 @@ defaults = {
     '--make-opts': '',
     '--nice': 0,
     '--pid-file': '/tmp/buildroot-autobuild.pid',
+    '--tc-cfg-uri': 'http://autobuild.buildroot.org/toolchains/configs/toolchain-configs.csv',
 }
 
 doc = """autobuild-run - run Buildroot autobuilder
@@ -97,6 +98,7 @@ Options:
                                  Defaults to %(--pid-file)s.
   -c, --config CONFIG            path to configuration file
                                  Not set by default.
+  -t, --tc-cfg-uri URI           URI of toolchain configuration file
 
 Format of the configuration file:
 
@@ -243,7 +245,7 @@ class SystemInfo:
 
         return not missing_requirements
 
-def get_toolchain_configs():
+def get_toolchain_configs(**kwargs):
     """Fetch and return the possible toolchain configurations
 
     This function returns an array of dictionaries, with for each toolchain:
@@ -252,7 +254,7 @@ def get_toolchain_configs():
         - hostarch: the host architecture for which the toolchain is built
         - contents: an array of lines of the defconfig
     """
-    tc_cfg_uri = 'http://autobuild.buildroot.org/toolchains/configs/toolchain-configs.csv'
+    tc_cfg_uri = kwargs['tc_cfg_uri']
 
     with urlopen_closing(tc_cfg_uri) as r:
         l = decode_byte_list(r.readlines())
@@ -519,7 +521,7 @@ def gen_config(**kwargs):
     log_write(log, "INFO: generate the configuration")
 
     # Select a random toolchain configuration
-    configs = get_toolchain_configs()
+    configs = get_toolchain_configs(**kwargs)
     i = randint(0, len(configs) - 1)
     config = configs[i]
 
@@ -910,6 +912,7 @@ def main():
                 submitter = args['--submitter'],
                 make_opts = (args['--make-opts'] or ''),
                 nice = (args['--nice'] or 0),
+                tc_cfg_uri = args['--tc-cfg-uri'],
                 upload = upload,
                 buildpid = buildpid
             ))
